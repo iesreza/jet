@@ -227,3 +227,7 @@ func (s *Set) Clean(key string) *Set {
 	s.cache = &cache{}
 	return s
 }
+
+func (s *Set) Development(dev bool) {
+	s.developmentMode = dev
+}
