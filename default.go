@@ -25,6 +25,7 @@ import (
 	"reflect"
 	"strings"
 	"text/template"
+	"time"
 )
 
 var defaultVariables map[string]reflect.Value
@@ -40,6 +41,9 @@ func init() {
 		"split":     reflect.ValueOf(strings.Split),
 		"trimSpace": reflect.ValueOf(strings.TrimSpace),
 		"html":      reflect.ValueOf(html.EscapeString),
+		"string":    reflect.ValueOf(fmt.Sprint),
+		"sprint":    reflect.ValueOf(fmt.Sprint),
+		"now":       reflect.ValueOf(time.Now),
 		"url":       reflect.ValueOf(url.QueryEscape),
 		"safeHtml":  reflect.ValueOf(SafeWriter(template.HTMLEscape)),
 		"safeJs":    reflect.ValueOf(SafeWriter(template.JSEscape)),
