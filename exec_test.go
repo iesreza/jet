@@ -72,19 +72,21 @@ func TestExecute(t *testing.T) {
 }
 
 func TestRandomExecute(t *testing.T) {
-	var template = "{{if true}}Hi {{ .Name }} {{ .I }}!{{end}}"
+	var template = "{{if true}}Hi {{ .Name }} {{ .I }}!{{end}} {{global}}"
 	Janitor(10 * time.Millisecond)
-	var p = 20
-	var testSize = 10000000
+
+	AddGlobal("global", " Global!!")
+
+	var testSize = 1000
 	for i := 0; i < testSize; i++ {
-		_, err := Execute(template+fmt.Sprint(i%((p/100)*testSize)), VarMap{}, struct {
+		rendered, err := Execute(template, VarMap{}, struct {
 			Name string
 			I    int
 		}{Name: "John", I: i})
 		if err != nil {
 			t.Errorf("executing template: %v", err)
 		}
-		//fmt.Println(rendered)
+		fmt.Println(rendered)
 
 	}
 }

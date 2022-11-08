@@ -31,6 +31,8 @@ import (
 
 type VarMap map[string]reflect.Value
 
+var globalSet = NewSet(NewInMemLoader())
+
 // SortedKeys returns a sorted slice of VarMap keys
 func (scope VarMap) SortedKeys() []string {
 	keys := make([]string, 0, len(scope))
@@ -122,6 +124,7 @@ func Execute(template string, variables VarMap, data interface{}) (rendered stri
 	} else {
 		t = &Template{
 			text:         template,
+			set:          globalSet,
 			passedBlocks: make(map[string]*BlockNode),
 		}
 		defer t.recover(&err)
@@ -165,4 +168,30 @@ func Execute(template string, variables VarMap, data interface{}) (rendered stri
 
 	st.executeList(t.Root)
 	return w.String(), nil
+}
+
+// AddGlobal adds a global variable into the Set,
+// overriding any value previously set under the specified key.
+// It returns the Set it was called on to allow for method chaining.
+func AddGlobal(key string, i interface{}) *Set {
+	globalSet.gmx.Lock()
+	defer globalSet.gmx.Unlock()
+	globalSet.globals[key] = reflect.ValueOf(i)
+	return globalSet
+}
+
+// LookupGlobal returns the global variable previously set under the specified key.
+// It returns the nil interface and false if no variable exists under that key.
+func LookupGlobal(key string) (val interface{}, found bool) {
+	globalSet.gmx.RLock()
+	defer globalSet.gmx.RUnlock()
+	val, found = globalSet.globals[key]
+	return
+}
+
+// AddGlobalFunc adds a global function into the Set,
+// overriding any function previously set under the specified key.
+// It returns the Set it was called on to allow for method chaining.
+func AddGlobalFunc(key string, fn Func) *Set {
+	return globalSet.AddGlobal(key, fn)
 }
