@@ -20,6 +20,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func unquote(text string) (string, error) {
@@ -39,8 +40,8 @@ type Template struct {
 	passedBlocks    map[string]*BlockNode
 	Root            *ListNode // top-level root of the tree.
 
-	text string // text parsed to create the template (or its parent)
-
+	text       string // text parsed to create the template (or its parent)
+	lastAccess time.Time
 	// Parsing only; cleared after parse.
 	lex       *lexer
 	token     [3]item // three-token lookahead for parser.

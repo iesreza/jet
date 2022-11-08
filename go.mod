@@ -1,4 +1,4 @@
-module github.com/CloudyKit/jet/v6
+module github.com/iesreza/jet/v6
 
 go 1.12
 

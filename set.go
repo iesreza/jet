@@ -219,3 +219,11 @@ func (s *Set) LookupGlobal(key string) (val interface{}, found bool) {
 func (s *Set) AddGlobalFunc(key string, fn Func) *Set {
 	return s.AddGlobal(key, fn)
 }
+
+// Clean cleanup the Set
+func (s *Set) Clean(key string) *Set {
+	s.gmx.RLock()
+	defer s.gmx.RUnlock()
+	s.cache = &cache{}
+	return s
+}

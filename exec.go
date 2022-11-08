@@ -19,9 +19,14 @@
 package jet
 
 import (
+	"bytes"
+	"hash"
+	"hash/fnv"
 	"io"
 	"reflect"
 	"sort"
+	"sync"
+	"time"
 )
 
 type VarMap map[string]reflect.Value
@@ -72,4 +77,92 @@ func (t *Template) Execute(w io.Writer, variables VarMap, data interface{}) (err
 
 	st.executeList(t.Root)
 	return
+}
+
+var _cache = sync.Map{}
+
+func fnv32a(v string) uint32 {
+	algorithm := fnv.New32a()
+	return uint32Hasher(algorithm, v)
+}
+func uint32Hasher(algorithm hash.Hash32, text string) uint32 {
+	algorithm.Write([]byte(text))
+	return algorithm.Sum32()
+}
+
+var janitor = false
+
+func Janitor(duration time.Duration) {
+	if janitor {
+		return
+	}
+	go func() {
+		ticker := time.NewTicker(duration)
+		for _ = range ticker.C {
+			var now = time.Now()
+			var deleteBefore = now.Add(-1 * duration)
+			_cache.Range(func(key, value interface{}) bool {
+				if value.(*Template).lastAccess.Before(deleteBefore) {
+					_cache.Delete(key)
+				}
+				return true
+			})
+		}
+	}()
+}
+
+// Execute executes the template
+func Execute(template string, variables VarMap, data interface{}) (rendered string, err error) {
+	var w = bytes.Buffer{}
+	var t *Template
+	var key = fnv32a(template)
+	v, ok := _cache.Load(key)
+	if ok {
+		t = v.(*Template)
+	} else {
+		t = &Template{
+			text:         template,
+			passedBlocks: make(map[string]*BlockNode),
+		}
+		defer t.recover(&err)
+
+		lexer := lex("", template, false)
+		lexer.setDelimiters("{{", "}}")
+		lexer.run()
+		t.startParse(lexer)
+		t.parseTemplate(false)
+		t.stopParse()
+
+		if t.extends != nil {
+			t.addBlocks(t.extends.processedBlocks)
+		}
+
+		for _, _import := range t.imports {
+			t.addBlocks(_import.processedBlocks)
+		}
+
+		t.addBlocks(t.passedBlocks)
+		_cache.Store(key, t)
+	}
+	t.lastAccess = time.Now()
+	st := pool_State.Get().(*Runtime)
+
+	defer st.recover(&err)
+
+	st.blocks = t.processedBlocks
+	st.variables = variables
+	st.set = t.set
+	st.Writer = &w
+
+	// resolve extended template
+	for t.extends != nil {
+		t = t.extends
+	}
+
+	if data != nil {
+		st.context = reflect.ValueOf(data)
+	}
+
+	st.executeList(t.Root)
+	return w.String(), nil
 }

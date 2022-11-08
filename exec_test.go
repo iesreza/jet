@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"testing"
+	"time"
 )
 
 func TestExecuteConcurrency(t *testing.T) {
@@ -26,5 +27,64 @@ func TestExecuteConcurrency(t *testing.T) {
 				t.Errorf("executing template: %v", err)
 			}
 		})
+	}
+}
+
+func TestSetExecute(t *testing.T) {
+	l := NewInMemLoader()
+	var template = "{{if true}}Hi {{ .Name }} {{ .I }}!{{end}}"
+	l.Set("foo", template)
+
+	set := NewSet(l)
+
+	tpl, err := set.GetTemplate("foo")
+	if err != nil {
+		t.Errorf("getting template from set: %v", err)
+	}
+
+	for i := 0; i < 100000000; i++ {
+
+		err := tpl.Execute(ioutil.Discard, nil, struct {
+			Name string
+			I    int
+		}{Name: "John", I: i})
+		if err != nil {
+			t.Errorf("executing template: %v", err)
+		}
+
+	}
+}
+
+func TestExecute(t *testing.T) {
+	var template = "{{if true}}Hi {{ .Name }} {{ .I }}!{{end}}"
+	Janitor(10 * time.Millisecond)
+	for i := 0; i < 100000000; i++ {
+		_, err := Execute(template, VarMap{}, struct {
+			Name string
+			I    int
+		}{Name: "John", I: i})
+		if err != nil {
+			t.Errorf("executing template: %v", err)
+		}
+		//fmt.Println(rendered)
+
+	}
+}
+
+func TestRandomExecute(t *testing.T) {
+	var template = "{{if true}}Hi {{ .Name }} {{ .I }}!{{end}}"
+	Janitor(10 * time.Millisecond)
+	var p = 20
+	var testSize = 10000000
+	for i := 0; i < testSize; i++ {
+		_, err := Execute(template+fmt.Sprint(i%((p/100)*testSize)), VarMap{}, struct {
+			Name string
+			I    int
+		}{Name: "John", I: i})
+		if err != nil {
+			t.Errorf("executing template: %v", err)
+		}
+		//fmt.Println(rendered)
+
 	}
 }
