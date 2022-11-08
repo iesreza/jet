@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gosimple/slug"
 	"html"
 	"io"
 	"io/ioutil"
@@ -39,6 +40,8 @@ func init() {
 		"repeat":    reflect.ValueOf(strings.Repeat),
 		"replace":   reflect.ValueOf(strings.Replace),
 		"split":     reflect.ValueOf(strings.Split),
+		"slug":      reflect.ValueOf(slug.Make),
+		"slugify":   reflect.ValueOf(slug.Make),
 		"trimSpace": reflect.ValueOf(strings.TrimSpace),
 		"html":      reflect.ValueOf(html.EscapeString),
 		"string":    reflect.ValueOf(fmt.Sprint),
