@@ -1,4 +1,4 @@
-module github.com/iesreza/jet/v7
+module github.com/iesreza/jet/v8
 
 go 1.12
 
