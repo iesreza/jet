@@ -20,7 +20,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/CloudyKit/jet/v6"
+	"github.com/iesreza/jet/v7"
 )
 
 func RunWithSet(t *testing.T, set *jet.Set, variables jet.VarMap, context interface{}, testName, testExpected string) {
