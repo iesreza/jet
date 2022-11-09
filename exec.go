@@ -94,6 +94,13 @@ func uint32Hasher(algorithm hash.Hash32, text string) uint32 {
 
 var janitor = false
 
+func FreeMem() {
+	_cache.Range(func(key, value interface{}) bool {
+		_cache.Delete(key)
+		return true
+	})
+}
+
 func Janitor(duration time.Duration) {
 	if janitor {
 		return
@@ -112,6 +119,8 @@ func Janitor(duration time.Duration) {
 		}
 	}()
 }
+
+var mu sync.Mutex
 
 // Execute executes the template
 func Execute(template string, variables VarMap, data interface{}) (rendered string, err error) {
@@ -147,7 +156,9 @@ func Execute(template string, variables VarMap, data interface{}) (rendered stri
 		t.addBlocks(t.passedBlocks)
 		_cache.Store(key, t)
 	}
+	mu.Lock()
 	t.lastAccess = time.Now()
+	mu.Unlock()
 	st := pool_State.Get().(*Runtime)
 
 	defer st.recover(&err)

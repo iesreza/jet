@@ -3,6 +3,7 @@ package jet
 import (
 	"fmt"
 	"io/ioutil"
+	"sync"
 	"testing"
 	"time"
 )
@@ -73,20 +74,29 @@ func TestExecute(t *testing.T) {
 
 func TestRandomExecute(t *testing.T) {
 	var template = "{{if true}}Hi {{ .Name }} {{ .I }}!{{end}} {{global}}"
-	Janitor(10 * time.Millisecond)
+	Janitor(1 * time.Second)
 
 	AddGlobal("global", " Global!!")
 
-	var testSize = 1000
+	var testSize = 10000000
+	var wg = sync.WaitGroup{}
 	for i := 0; i < testSize; i++ {
-		rendered, err := Execute(template, VarMap{}, struct {
-			Name string
-			I    int
-		}{Name: "John", I: i})
-		if err != nil {
-			t.Errorf("executing template: %v", err)
-		}
-		fmt.Println(rendered)
-
+		wg.Add(1)
+		go func() {
+			var x = ""
+			if i < 10000000/2 {
+				x = fmt.Sprint(i % 100)
+			}
+			_, err := Execute(template+x, VarMap{}, struct {
+				Name string
+				I    int
+			}{Name: "John", I: i})
+			if err != nil {
+				t.Errorf("executing template: %v", err)
+			}
+			wg.Done()
+			time.Sleep(10 * time.Second)
+		}()
 	}
+	wg.Wait()
 }
